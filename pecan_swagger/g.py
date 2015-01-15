@@ -18,12 +18,26 @@ def get_paths():
     pathlist = []
     for name in _hierarchy:
         fullpath = build_path(get_swag(name))
-        pathlist.append(fullpath)
+        methods = methods_get(name)
+        ptuple = (fullpath, methods)
+        pathlist.append(ptuple)
     return pathlist
 
 
 def get_swag(name):
     return _hierarchy.get(name).__swag
+
+
+def methods_get(name):
+    c = _hierarchy[name]
+    mlist = []
+    for i in c.__dict__:
+        ii = getattr(c, i)
+        if hasattr(ii, '__swag'):
+            m = ii.__swag.get('method')
+            if m is not None:
+                mlist.append(m)
+    return mlist
 
 
 def path_join(part1, part2):
