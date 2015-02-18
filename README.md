@@ -12,12 +12,10 @@ given a file name `myapp.py`
     @swagger.path('profile', 'Profile', 'Root')
     class ProfileController(object):
 
-        @swagger.method('GET')
         @pecan.expose(generic=True, template='index.html')
         def index(self):
             return dict()
 
-        @swagger.method('POST')
         @index.when(method='POST')
         def index_post(self, **kw):
             print(kw)
@@ -49,7 +47,6 @@ the following will be produced when run
         "/profile": {
           "POST": {},
           "GET": {}
-        },
-        "/": {}
+        }
       }
     }
