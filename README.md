@@ -29,7 +29,6 @@ given a file name `myapp.py`
 
 and another file named `myapp-doc.py`
 
-    import json
     import pprint
 
     from pecan_swagger import utils

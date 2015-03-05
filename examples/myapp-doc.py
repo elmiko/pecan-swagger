@@ -1,5 +1,4 @@
 #!/bin/env python
-import json
 import pprint
 
 from pecan_swagger import utils
