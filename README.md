@@ -29,10 +29,15 @@ given a file name `myapp.py`
 
 and another file named `myapp-doc.py`
 
+    import json
+    import pprint
+
     from pecan_swagger import utils
     import myapp
 
-    print(utils.swagger_build('myapp', '1.0'))
+    pp = pprint.PrettyPrinter(indent=2)
+    pp.pprint(utils.swagger_build('myapp', '1.0'))
+
 
 the following will be produced when run
 
