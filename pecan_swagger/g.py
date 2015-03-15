@@ -1,6 +1,8 @@
 import copy
+import inspect
 
 from pecan import util as p_u
+import six
 
 
 _hierarchy = {}
@@ -36,7 +38,8 @@ def get_controller_paths(controllers):
             else:
                 methods.append(method)
             # TODO drill down through decorators to get true function name
-            del lc[func.__name__]
+            truename = getrealname(func)
+            del lc[truename]
         return methods
 
     lc = copy.deepcopy(controllers)
@@ -50,6 +53,8 @@ def get_controller_paths(controllers):
     if lc.get('_route'):
         paths.append(('<route>', ['*']))
         del lc['_route']
+    if lc.get('_lookup'):
+        del lc['_lookup']
     generic_controllers = [c for c in lc if lc[c].get('generic')]
     for controller in generic_controllers:
         paths.append((controller, get_methods_for_generic(controller)))
@@ -91,6 +96,33 @@ def get_paths():
 def get_swag(name):
     '''return the swag metadata from an named controller.'''
     return _hierarchy.get(name).__swag
+
+
+def getrealname(method):
+    '''attempt to get a method's real name.'''
+    argspec = inspect.getargspec(method)
+    args = argspec[0]
+    if args and args[0] == 'self':
+        return method.__name__
+    if hasattr(method, '__func__'):
+        method = method.__func__
+
+    func_closure = six.get_function_closure(method)
+
+    # NOTE(sileht): if the closure is None we cannot look deeper,
+    # so return actual argspec, this occurs when the method
+    # is static for example.
+    if func_closure is None:
+        return method.__name__
+
+    closure = next(
+        (
+            c for c in func_closure if six.callable(c.cell_contents)
+        ),
+        None
+    )
+    method = closure.cell_contents
+    return getrealname(method)
 
 
 def methods_get(name):
