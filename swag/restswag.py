@@ -1,17 +1,16 @@
 from pecan import rest
-import inspect
 
 def decorated_controllers():
     return []
 
-def collect_controllers(RootController):
+def collect_controllers(root_controller):
     """
     Traverses project starting with RootController
     and collects all RestControllers returning a tuple with their respective paths.
     Concatenates decorated controllers and their paths to the list.
     :return [(controllers, path),...]
     """
-    stack = [(RootController, "/")]
+    stack = [(root_controller, "/")]
     queue = []
     while stack:
         restcontroller = stack.pop()
@@ -20,8 +19,7 @@ def collect_controllers(RootController):
             if issubclass(type(getattr(restcontroller[0], ctrl)), rest.RestController):
                 controllers.append((getattr(restcontroller[0], ctrl), ctrl))
         for controller in controllers:
-            sep = '/'
-            if restcontroller[1][-1] == sep: sep = ''
+            sep = '/' if restcontroller[1][-1] != '/' else ''
             stack.append((controller[0], restcontroller[1] + sep + controller[1]))
         queue.append(restcontroller)
 
@@ -39,15 +37,15 @@ def collect_methods(controllers):
 
         # going through standard pecan methods
         if getattr(controller[0], 'get_one', None):
-            methodtuple = (controller[1] + "/{" +
-                               getattr(controller[0], 'get_one')._pecan['argspec'][0][1] + "}",
-                           ('get', getattr(controller[0], 'get_one')))
+            methodtuple = ('{path}/{{{argspec}}}'.format(path=controller[1],
+                                                         argspec=controller[0].get_one._pecan['argspec'][0][1]),
+                           ('get', controller[0].get_one))
             methods = add_method(methods, methodtuple)
         if getattr(controller[0], 'get_all', None):
-            methodtuple = (controller[1], ('get', getattr(controller[0], 'get_all')))
+            methodtuple = (controller[1], ('get', controller[0].get_all))
             methods = add_method(methods, methodtuple)
         if getattr(controller[0], 'get', None):
-            methodtuple = (controller[1], ('get', getattr(controller[0], 'get')))
+            methodtuple = (controller[1], ('get', controller[0].get))
             methods = add_method(methods, methodtuple)
         if getattr(controller[0], 'new', None):
             pass
@@ -56,20 +54,20 @@ def collect_methods(controllers):
             pass
             methods = add_method(methods, methodtuple)
         if getattr(controller[0], 'post', None):
-            methodtuple = (controller[1], ('post', getattr(controller[0], 'post')))
+            methodtuple = (controller[1], ('post', controller[0].post))
             methods = add_method(methods, methodtuple)
         if getattr(controller[0], 'put', None):
-            methodtuple = (controller[1], ('put', getattr(controller[0], 'put')))
+            methodtuple = (controller[1], ('put', controller[0].put))
             methods = add_method(methods, methodtuple)
         if getattr(controller[0], 'get_delete', None):
-            methodtuple = (controller[1] +  "/{" +
-                               getattr(controller[0], 'get_delete')._pecan['argspec'][0][1] + "}",
-                           ('delete', getattr(controller[0], 'get_delete')))
+            methodtuple = ('{path}/{{{argspec}}}'.format(path=controller[1],
+                                                         argspec=controller[0].get_delete._pecan['argspec'][0][1]),
+                           ('delete', controller[0].get_delete))
             methods = add_method(methods, methodtuple)
         if getattr(controller[0], 'delete', None):
-            methodtuple = (controller[1] +  "/{" +
-                               getattr(controller[0], 'delete')._pecan['argspec'][0][1] + "}",
-                           ('delete', getattr(controller[0], 'delete')))
+            methodtuple = ('{path}/{{{argspec}}})'.format(path=controller[1],
+                                                          argspec=controller[0].delete._pecan['argspec'][0][1]),
+                           ('delete', controller[0].delete))
             methods = add_method(methods, methodtuple)
         if getattr(controller[0], 'index', None):
             pass
@@ -87,21 +85,19 @@ def collect_methods(controllers):
                     ml = [method in m]
                     for method in ml:
                         if method == 'get_one':
-                            methodtuple = (controller[1] + "/{" +
-                                           getattr(controller[0], 'get_one')._pecan['argspec'][0][1] + "}",
-                           ('get', getattr(controller[0], 'get_one')))
+                            methodtuple = ('{path}/{{{argspec}}}'.format(path=controller[1],
+                                                         argspec=controller[0].get_one._pecan['argspec'][0][1]),
+                                           ('get', controller[0].get_one))
                             methods = add_method(methods, methodtuple)
-                            pass
                         elif method == 'get_delete':
-                            methodtuple = (controller[1] + "/{" +
-                                           getattr(controller[0], 'get_delete')._pecan['argspec'][0][1] + "}",
-                           ('delete', getattr(controller[0], 'get_delete')))
+                            methodtuple = ('{path}/{{{argspec}}}'.format(path=controller[1],
+                                                                         argspec=controller[0].get_delete._pecan['argspec'][0][1]),
+                                           ('delete', controller[0].get_delete))
                             methods = add_method(methods, methodtuple)
-                            pass
                         elif method == 'delete':
-                            methodtuple = (controller[1] + "/{" +
-                                           getattr(controller[0], 'get_delete')._pecan['argspec'][0][1] + "}",
-                           ('delete', getattr(controller[0], 'delete')))
+                            methodtuple = ('{path}/{{{argspec}}})'.format(path=controller[1],
+                                                                          argspec=controller[0].delete._pecan['argspec'][0][1]),
+                                           ('delete', controller[0].delete))
                             methods = add_method(methods, methodtuple)
                         else:
                             methodtuple = (controller[1], (str(method).lower(), getattr(controller[0], k)))
@@ -117,25 +113,3 @@ def add_method(methods, methodtuple):
         methods[path] = {}
     methods[path][methodname] = methodfunction
     return methods
-
-
-
-import ast
-
-
-def extract_return(file, fname):
-    """
-    tryna extract return type
-    :param file:
-    :param fname:
-    :return:
-    """
-    for x in ast.walk(ast.parse(open(file).read())):
-        if not(isinstance(x, ast.FunctionDef)):
-            continue
-        if not(x.name == fname):
-            continue
-        for b in x.body:
-            if isinstance(b, ast.Return):
-                if isinstance(b.value, ast.Name):
-                    yield b.value.id
