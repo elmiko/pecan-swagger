@@ -16,3 +16,11 @@ def method(method):
         m.__swag = dict(method=method)
         return m
     return decorator
+
+def methodroute(parameter, newcontroller):
+    def decorator(c):
+        if not hasattr(c, '__routes'):
+            c.__routes = []
+        c.__routes.append((parameter, newcontroller))
+        return c
+    return decorator

@@ -1,4 +1,5 @@
 from pecan import rest
+import importlib
 
 def decorated_controllers():
     return []
@@ -75,7 +76,20 @@ def collect_methods(controllers):
             pass
         # pecan's _lookup function
         if getattr(controller[0], '_lookup', None):
-            pass
+            lookup = controller[0]._lookup
+            routes = lookup.__routes
+            if hasattr(lookup, '__routes'):
+                newcontrollers = []
+                sep = '/' if controller[0][-1] != '/' else ''
+                currentpath = controller[0] + sep
+                for route in routes:
+                    path = '{currentpath}{{{argspec}}}/'.format(currentpath=currentpath,argspec=route[0])
+                    module = importlib.import_module(controller[0].__module__)
+                    newcontroller = getattr(module, route[1])
+                    newcontrollers.append([(path, newcontroller)])
+                newmethods = collect_methods(newcontrollers)
+                methods.update(newmethods)
+
 
         # if controller uses custom routing
         if getattr(controller[0], '_custom_actions', None):
