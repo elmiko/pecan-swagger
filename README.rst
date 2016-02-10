@@ -1,9 +1,15 @@
-# pecan-swagger
+=====================
+Pecan Swagger Project
+=====================
+
 some helpers to create swagger output from a pecan app
 
-## example usage
+example usage
+-------------
 
-given a file name `myapp.py`
+given a file named ``myapp.py``
+
+::
 
     import pecan
     from pecan_swagger import decorators as swagger
@@ -27,7 +33,9 @@ given a file name `myapp.py`
 
         profile = ProfileController()
 
-and another file named `myapp-doc.py`
+and another file named ``myapp-doc.py``
+
+::
 
     import pprint
 
@@ -39,6 +47,8 @@ and another file named `myapp-doc.py`
 
 
 the following will be produced when run
+
+::
 
     $ python myapp-doc.py
     {
