@@ -5,18 +5,29 @@ from pecan import util as p_u
 import six
 
 
+"""
+global hierarchy module
+
+this module is at the heart of the swagger conversion utility. it
+contains a global "hierarchy" object which will provide a single point
+to assemble an application's swagger output.
+
+there are also several helper functions to assist in building the
+hierarchy of controllers, routes, and methods.
+"""
+
 _hierarchy = {}
 
 
 def add_path(c):
-    '''adds a named controller to the hierarchy.'''
+    """adds a named controller to the hierarchy."""
     if _hierarchy.get(c.__swag['name']):
         raise Exception('name {} already exists in hierarchy'.format(c.__swag['name']))
     _hierarchy[c.__swag['name']] = c
 
 
 def build_path(swaginfo):
-    '''return the route path for a swag metadata item.'''
+    """return the route path for a swag metadata item."""
     if swaginfo.get('parent') is not None:
         return path_join(build_path(get_swag(swaginfo.get('parent'))),
                          swaginfo.get('endpoint'))
@@ -24,11 +35,11 @@ def build_path(swaginfo):
 
 
 def get_controller_paths(controllers):
-    '''get a list of paths with methods
+    """
+    get a list of paths with methods
 
     returns a list of tuples (controller path, methods).
-
-    '''
+    """
     def get_methods_for_generic(name):
         methods = []
         generic_handlers = lc.get(name).get('generic_handlers', {})
@@ -64,24 +75,24 @@ def get_controller_paths(controllers):
 
 
 def get_controllers(name):
-    '''get all the controllers associated with a path
+    """
+    get all the controllers associated with a path
 
     returns a dictionary of controllers indexed by their names.
-
-    '''
+    """
     c = _hierarchy[name]
     return {k: p_u._cfg(v) for k, v in c.__dict__.items() if p_u.iscontroller(v)}
 
 
 def get_paths():
-    '''return all the registered paths
+    """
+    return all the registered paths
 
     loops through the hierarchy and retuns a list of tuples containing the
     paths and their methods.
 
     :returns: [(path, methods), ...]
-
-    '''
+    """
     pathlist = []
     for name in _hierarchy:
         fullpath = build_path(get_swag(name))
@@ -94,12 +105,12 @@ def get_paths():
 
 
 def get_swag(name):
-    '''return the swag metadata from an named controller.'''
+    """return the swag metadata from an named controller."""
     return _hierarchy.get(name).__swag
 
 
 def getrealname(method):
-    '''attempt to get a method's real name.'''
+    """attempt to get a method's real name."""
     argspec = inspect.getargspec(method)
     args = argspec[0]
     if args and args[0] == 'self':
@@ -126,7 +137,7 @@ def getrealname(method):
 
 
 def methods_get(name):
-    '''get all the methods for a named controller.'''
+    """get all the methods for a named controller."""
     c = _hierarchy[name]
     mlist = []
     if hasattr(c, 'index') and p_u.iscontroller(c.index):
@@ -144,6 +155,7 @@ def methods_get(name):
 
 
 def path_join(part1, part2):
+    """join two url paths."""
     if len(part2) == 0:
         return part1
     sep = '/'
