@@ -11,23 +11,23 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 
 setuptools.setup(
-    name = 'pecan-swagger',
-    version = '0.1.0',
-    description = 'A project to produce swagger from pecan',
-    long_description = long_description,
-    url = 'https://github.com/elmiko/pecan-swagger',
-    author = 'Michael McCune',
-    author_email = 'msm@opbstudios.com',
-    license = 'BSD',
-    classifiers = [
+    name='pecan-swagger',
+    version='0.1.0',
+    description='A project to produce swagger from pecan',
+    long_description=long_description,
+    url='https://github.com/elmiko/pecan-swagger',
+    author='Michael McCune',
+    author_email='msm@opbstudios.com',
+    license='BSD',
+    classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.4',
         ],
-    keywords = 'pecan swagger development',
-    packages = [
+    keywords='pecan swagger development',
+    packages=[
         'pecan_swagger',
     ],
 )
