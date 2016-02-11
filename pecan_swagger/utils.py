@@ -1,5 +1,3 @@
-import collections
-
 from pecan_swagger import g as g
 
 
@@ -17,9 +15,9 @@ swagger_build -- build a full swagger dictionary
 
 def swagger_build(title, version):
     swag = dict()
-    swag['swagger']='2.0'
-    swag['info']=dict(title=title, version=version)
-    swag['paths']={}
+    swag['swagger'] = '2.0'
+    swag['info'] = dict(title=title, version=version)
+    swag['paths'] = {}
     for p in g.get_paths():
         if len(p[1]) > 0:
             swag['paths'][p[0]] = {k: {} for k in p[1]}

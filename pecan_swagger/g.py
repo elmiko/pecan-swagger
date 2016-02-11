@@ -22,7 +22,8 @@ _hierarchy = {}
 def add_path(c):
     """adds a named controller to the hierarchy."""
     if _hierarchy.get(c.__swag['name']):
-        raise Exception('name {} already exists in hierarchy'.format(c.__swag['name']))
+        raise Exception(
+            'name {} already exists in hierarchy'.format(c.__swag['name']))
     _hierarchy[c.__swag['name']] = c
 
 
@@ -81,7 +82,8 @@ def get_controllers(name):
     returns a dictionary of controllers indexed by their names.
     """
     c = _hierarchy[name]
-    return {k: p_u._cfg(v) for k, v in c.__dict__.items() if p_u.iscontroller(v)}
+    return {k: p_u._cfg(v)
+            for k, v in c.__dict__.items() if p_u.iscontroller(v)}
 
 
 def get_paths():
