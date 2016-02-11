@@ -11,14 +11,15 @@ _c = []
 def collect_swagger(title, version):
     swagger = {}
     swagger['swagger'] = '2.0'
-    swagger['info'] = {    'title': title,
-                            "description": str(inspect.getcomments(RootController)),
-                            'version': version,
-                            "license": {
-                                "name": "Apache 2.0",
-                                "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
-                            }
-    }
+    swagger['info'] = {
+        'title': title,
+        "description": str(inspect.getcomments(RootController)),
+        'version': version,
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+            }
+        }
     swagger['host'] = "google.com"
     swagger['schemes'] = ['http']
     swagger['basePath'] = '/'
@@ -35,6 +36,7 @@ def collect_swagger(title, version):
     swagger['definitions'] = definitions
 
     print json.dumps(swagger, indent=2)
+
 
 # run below method with name and version and scooop up swagger from terminal
 # collect_swagger(project_name, project_version)

@@ -34,7 +34,8 @@ def getresponses(method):
 def getschema(return_type):
     schema = {}
     if type(return_type) == type(wtypes.Base):
-        name = "".join(e for e in str(return_type).split('.')[-1] if e.isalnum())
+        name = "".join(
+            e for e in str(return_type).split('.')[-1] if e.isalnum())
         schema['$ref'] = "#/definitions/" + name
         if not name in _definitions:
             _definitions[name] = {}
@@ -43,7 +44,8 @@ def getschema(return_type):
             _definitions[name]['properties'] = {}
             for attr in dir(return_type):
                 if isinstance(getattr(return_type, attr), wtypes.wsattr):
-                    _definitions[name]['properties'][attr] = getschema(getattr(return_type, attr))
+                    _definitions[name]['properties'][attr] = getschema(
+                        getattr(return_type, attr))
     elif isinstance(return_type, wtypes.wsattr):
         if (isinstance(return_type.datatype, wtypes.ArrayType)):
             schema['type'] = 'array'
@@ -70,7 +72,8 @@ def getparameters(method):
     for arg in method._wsme_definition.arguments:
         argspec = {}
         if type(arg.datatype) == type(wtypes.Base):
-            argspec['name'] = "".join(e for e in str(arg.datatype).split('.')[-1] if e.isalnum())
+            argspec['name'] = "".join(
+                e for e in str(arg.datatype).split('.')[-1] if e.isalnum())
             argspec['schema'] = getschema(arg.datatype)
             argspec['in'] = "body"
             argspec['description'] = inspect.getdoc(arg.datatype)
@@ -79,7 +82,9 @@ def getparameters(method):
             argspec['name'] = arg.name
             argspec['in'] = "path"
             description = [x for x in inspect.getdoc(method).split("\n")
-                           if (x.split(" ")[0] == str("param: " + arg.name), None)]
+                           if
+                           (x.split(" ")[0] == str("param: " + arg.name),
+                           None)]
             argspec['description'] = description[0]
             argspec['required'] = True
             argspec['type'] = "string"
@@ -88,9 +93,11 @@ def getparameters(method):
 
 def gettype(datatype):
     """
-    given a datatype, return a dictionary with the swagger type and format the datatype belongs to
+    given a datatype, return a dictionary with the swagger type and
+    format the datatype belongs to
+
     :param datatype:
-    :return: swagger type spec
+    :returns: swagger type spec
     """
     schema = {}
     if datatype == wtypes.IntegerType or "Integer" in str(datatype):
