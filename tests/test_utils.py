@@ -31,6 +31,6 @@ class TestUtils(unittest.TestCase):
                     }
                 }
             }
-        
+
         actual = utils.swagger_build('example_app', '1.0')
         self.assertDictEqual(expected, actual)
