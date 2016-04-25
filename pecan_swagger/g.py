@@ -54,11 +54,27 @@ def get_controller_paths(controllers):
             del lc[truename]
         return methods
 
+    def append_methods_for_specific(name, tpl):
+        paths.append(tpl)
+        del lc[name]
+
     lc = copy.deepcopy(controllers)
     paths = []
     # TODO incorporate method decorator, removing functions marked
     if lc.get('index'):
         paths.append(('', get_methods_for_generic('index')))
+    if lc.get('delete'):
+        paths.append(('', ['DELETE']))
+        del lc['delete']
+    if lc.get('get'):
+        paths.append(('', ['GET']))
+        del lc['get']
+    if lc.get('post'):
+        paths.append(('', ['POST']))
+        del lc['post']
+    if lc.get('put'):
+        paths.append(('', ['PUT']))
+        del lc['put']
     if lc.get('_default'):
         paths.append(('<default>', ['*']))
         del lc['_default']
