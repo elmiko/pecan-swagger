@@ -14,6 +14,9 @@ class TestUtils(unittest.TestCase):
                 "title": "example_app"
                 },
             "paths": {
+                "/api": {
+                    "GET": {}
+                    },
                 "/messages": {
                     "GET": {},
                     "POST": {}

@@ -1,5 +1,14 @@
 import pecan
+from pecan import rest
 from pecan_swagger import decorators as swagger
+
+
+@swagger.path('api', 'API', 'Root')
+class APIController(rest.RestController):
+
+   @pecan.expose()
+   def get(self):
+       pass
 
 
 @swagger.path('messages', 'Messages', 'Root')
@@ -45,3 +54,4 @@ class RootController(object):
 
     profile = ProfileController()
     messages = MessagesController()
+    api = APIController()
