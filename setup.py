@@ -12,7 +12,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setuptools.setup(
     name='pecan-swagger',
-    version='0.1.0',
+    version='0.1.2',
     description='A project to produce swagger from pecan',
     long_description=long_description,
     url='https://github.com/elmiko/pecan-swagger',
