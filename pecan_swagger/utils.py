@@ -19,6 +19,8 @@ def swagger_build(title, version):
     swag['info'] = dict(title=title, version=version)
     swag['paths'] = {}
     for p in g.get_paths():
-        if len(p[1]) > 0:
+        if p[0] not in swag['paths']:
             swag['paths'][p[0]] = {k: {} for k in p[1]}
+        elif len(p[1]) > 0:
+            swag['paths'][p[0]].update({k: {} for k in p[1]})
     return swag

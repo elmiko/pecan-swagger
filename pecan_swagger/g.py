@@ -18,6 +18,9 @@ hierarchy of controllers, routes, and methods.
 
 _hierarchy = {}
 
+_http_methods = {'GET': '', 'POST': '', 'PUT': '',
+                 'PATCH': '<specifier>', 'DELETE': '<specifier>',
+                 'HEAD': '', 'TRACE': ''}
 
 def add_path(c):
     """adds a named controller to the hierarchy."""
@@ -63,31 +66,36 @@ def get_controller_paths(controllers):
     # TODO incorporate method decorator, removing functions marked
     if lc.get('index'):
         paths.append(('', get_methods_for_generic('index')))
-    if lc.get('delete'):
-        paths.append(('', ['DELETE']))
-        del lc['delete']
-    if lc.get('get'):
-        paths.append(('', ['GET']))
-        del lc['get']
-    if lc.get('post'):
-        paths.append(('', ['POST']))
-        del lc['post']
-    if lc.get('put'):
-        paths.append(('', ['PUT']))
-        del lc['put']
+
+    # for REST controller
+    for method, path in _http_methods.items():
+        func = method.lower()
+        if lc.get(func):
+            append_methods_for_specific(func, (path, [method]))
+
+    if lc.get('get_all'):
+        append_methods_for_specific('get_all', ('', ['GET']))
+    if lc.get('get_one'):
+        append_methods_for_specific('get_one', ('<specifier>', ['GET']))
+
     if lc.get('_default'):
-        paths.append(('<default>', ['*']))
-        del lc['_default']
+        append_methods_for_specific('_default', ('<default>', ['*']))
     if lc.get('_route'):
-        paths.append(('<route>', ['*']))
-        del lc['_route']
+        append_methods_for_specific('_route', ('<route>', ['*']))
     if lc.get('_lookup'):
         del lc['_lookup']
+
+    if lc.get('_custom_actions'):
+        for ca, ca_method in lc['_custom_actions'].items():
+            paths.append((ca, ca_method))
+        del lc['_custom_actions']
+
     generic_controllers = [c for c in lc if lc[c].get('generic')]
     for controller in generic_controllers:
         paths.append((controller, get_methods_for_generic(controller)))
     for controller in lc:
-        paths.append((controller, ['GET']))
+        if controller not in [path[0] for path in paths]:
+            paths.append((controller, ['GET']))
     return paths
 
 
@@ -98,9 +106,12 @@ def get_controllers(name):
     returns a dictionary of controllers indexed by their names.
     """
     c = _hierarchy[name]
-    return {k: p_u._cfg(v)
-            for k, v in c.__dict__.items() if p_u.iscontroller(v)}
-
+    controllers = {k: p_u._cfg(v)
+                   for k, v in c.__dict__.items() if p_u.iscontroller(v)}
+    cacts = {k: v for k, v in c.__dict__.items() if k == '_custom_actions'}
+    if len(cacts):
+        controllers.update(cacts)
+    return controllers
 
 def get_paths():
     """
