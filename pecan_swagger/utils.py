@@ -35,8 +35,8 @@ def _tuple_to_dict(tpl):
     This function arrows taple including lists.
 
     ex.) acceptable taple
-    OK: ('/', ('GET',(('desc',{}),('res',{}),('params',['id','name']))))
-    NG: ('/', ('GET',('desc','res',('params',['id','name']))))
+    OK: ('/', ('get',(('desc',{}),('res',{}),('params',['id','name']))))
+    NG: ('/', ('get',('desc','res',('params',['id','name']))))
     """
     if isinstance(tpl, list):
         d = []

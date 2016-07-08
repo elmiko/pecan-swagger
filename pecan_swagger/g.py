@@ -71,10 +71,9 @@ def get_controller_paths(controllers, wsme_defs):
 
     # for REST controller
     for method, path in _http_methods.items():
-        func = method.lower()
-        if lc.get(func):
-            spec = wsme_defs.get(func) # add wsme definitions
-            append_methods_for_specific(func, (path, (method.lower(), spec)))
+        if lc.get(method):
+            spec = wsme_defs.get(method) # add wsme definitions
+            append_methods_for_specific(method, (path, (method, spec)))
 
     if lc.get('get_all'):
         # add wsme definitions
@@ -126,20 +125,20 @@ def get_wsme_defs(name):
              or datatype == 'integer' or datatype == 'string':
             # no format
             tf['type'] = datatype
-        elif 'unicode':
+        elif datatype == 'unicode' or datatype == 'str':
             # primitive, no format
             tf['type'] = 'string'
         elif datatype == 'int':
             # primitive, no format
             tf['type'] = 'integer'
+        elif datatype == 'enum':
+            tf['type'] = 'enum'
         elif datatype == 'unset':
             tf['type'] = None
         elif datatype == 'dict':
             tf['type'] = 'object'
-        elif datatype == 'enum':
-            tf['type'] = 'enum'
         else:
-            tf['type'] = datatype
+            tf['type'] = 'object'
         return tf
 
     def get_type_str(obj, src_dict = None):
@@ -150,11 +149,13 @@ def get_wsme_defs(name):
             str = obj.__class__.__name__
         if str.endswith('Type'):
             str = str[:-4]
+        elif str == 'str':
+            str = 'string'
         str = string.lower(str)
 
+        tf = datatype_to_type_and_format(str)
         if isinstance(src_dict, dict):
             # if dict is in args, set 'type' and 'format' into the dict and return
-            tf = datatype_to_type_and_format(str)
             src_dict.update({'type': tf['type']})
             if 'format' in tf:
                 src_dict.update({'format': tf['format']})
@@ -167,11 +168,20 @@ def get_wsme_defs(name):
                     src_dict[to_swag_key(k)] = v
                 elif k == 'pattern' and v is not None:
                     src_dict[to_swag_key(k)] = v.pattern
+                # TODO(shu-mutou): this should be removed for production.
+                #else:
+                #    src_dict[to_swag_key(k)] = v
 
-            return str
-        else:
-            # return 'type' only
-            return str
+            if hasattr(obj, 'basetype'):
+                # UserType or Enum
+                src_dict['type'] = get_type_str(obj.basetype)
+
+            if str == 'enum':
+                # Enum
+                src_dict['enum'] = [v for v in  obj.values]
+
+        # return 'type' only
+        return tf['type']
 
     def to_swag_key(key):
         keys = {
@@ -195,26 +205,26 @@ def get_wsme_defs(name):
         # 'Items Object' can be part of 'Schema Object' or 'Items Object',
         # and can use recursively
         prop_dict = {}
+        # TODO(shu-mutou): this should be removed for production.
         #prop_dict['obj'] = inspect.getmembers(item)
         for a, i in inspect.getmembers(item):
             if a == 'datatype':
-                get_type_str(i, prop_dict)
                 datatype = get_type_str(i, prop_dict)
                 if datatype == 'array':
                     # if array, do recursively
                     prop_dict['items'] = inspect_wm_schema(i.item_type)
-            elif a == 'default':
-                if get_type_str(i) == 'unset':
-                    #prop_dict[to_swag_key(a)] = None
-                    pass
-                else:
+                elif datatype == 'object':
+                    # if obuject, do recursively
+                    prop_dict['items'] = inspect_wm_schema(i)
+            elif a == 'default' and i:
                     prop_dict[to_swag_key(a)] = i
             elif a == 'name' and isparams:
                 prop_dict[to_swag_key(a)] = i
-            elif a == 'mandatory' and i is not None and isparams:
+            elif a == 'mandatory' and i:
                 prop_dict[to_swag_key(a)] = i
-            elif (a == 'readonly' or a == 'doc') \
-                 and i is not None:
+            elif a == 'readonly' and i:
+                prop_dict[to_swag_key(a)] = i
+            elif a == 'doc' and i is not None:
                 prop_dict[to_swag_key(a)] = i
 
         if isparams and prop_dict['type'] in ['object', 'array']:
@@ -222,7 +232,6 @@ def get_wsme_defs(name):
                                    'type': prop_dict['type']}
             del prop_dict['type']
             del prop_dict['items']
-            del prop_dict['default']
         return prop_dict
 
     def get_wsattr_and_wsproperty(obj):
@@ -236,6 +245,7 @@ def get_wsme_defs(name):
 
     def inspect_wm_schema(schema_obj, isparams=False):
         schema_dict = {}
+        # TODO(shu-mutou): this should be removed for production.
         #schema_dict['obj'] = get_wsattr_and_wsproperty(schema_obj)
         ws_len = len(get_wsattr_and_wsproperty(schema_obj))
         for key, obj in inspect.getmembers(schema_obj):
@@ -252,17 +262,21 @@ def get_wsme_defs(name):
                         # single array
                         schema_dict[to_swag_key(key)] = {'type': 'array'}
                         schema_dict[to_swag_key(key)]['items'] = get_wm_item_prop(obj, isparams)
-                        # FIX: this can't get contents
                 else:
                     # multi property schema or array
                     schema_dict.update({'type': 'object'})
                     # properties
                     if 'items' not in schema_dict:
                         schema_dict['items'] = {'properties': {}}
-                    schema_dict['items']['properties'].update({to_swag_key(key): get_wm_item_prop(obj, isparams)})
+                    prop = {key: get_wm_item_prop(obj, isparams)}
                     # required as array of string
-                    # TODO: required as array of string
-                    #schema_dict['required'] = []
+                    if 'required' in prop[key] and prop[key]['required'] \
+                       and isinstance(prop[key]['required'], bool):
+                        if 'required' not in schema_dict:
+                            schema_dict['required'] = []
+                        schema_dict['required'].append(key)
+                        del prop[key]['required']
+                    schema_dict['items']['properties'].update(prop)
 
             #if key == 'sample':
                 # TODO: example from sample
@@ -298,6 +312,7 @@ def get_wsme_defs(name):
             elif w == 'status_code':
                 wsme['responses'][d] = wsme['responses']['status']
                 del wsme['responses']['status']
+            # TODO(shu-mutou): this should be removed for production.
             #elif w == 'body_type':
             #    wsme[to_swag_key(w)] = get_type_str(d)
             #elif w == 'extra_options' or w == 'ignore_extra_args' \
@@ -315,6 +330,7 @@ def get_wsme_defs(name):
                 if m == "_wsme_definition":
                     wsme_defs[k] = get_wm_def(o)
 
+    # TODO(shu-mutou): this should be removed for production.
     # output wsme info into files by each controller for dev
     #import pprint
     #with open(name + '.txt', 'w') as fout:
