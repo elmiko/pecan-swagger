@@ -13,24 +13,26 @@ class TestUtils(unittest.TestCase):
                 "version": "1.0",
                 "title": "example_app"
                 },
+            "produces": [],
+            "consumes": [],
             "paths": {
                 "/api": {
-                    "GET": {}
+                    "get": {}
                     },
                 "/messages": {
-                    "GET": {},
-                    "POST": {}
+                    "get": {},
+                    "post": {}
                     },
                 "/profile": {
-                    "GET": {},
-                    "POST": {}
+                    "get": {},
+                    "post": {}
                     },
                 "/profile/image": {
-                    "GET": {},
-                    "POST": {}
+                    "get": {},
+                    "post": {}
                     },
                 "/profile/stats": {
-                    "GET": {}
+                    "get": {}
                     }
                 }
             }
