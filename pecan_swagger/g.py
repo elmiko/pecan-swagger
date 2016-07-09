@@ -53,7 +53,7 @@ def get_controller_paths(controllers, wsme_defs):
             if method == 'DEFAULT':
                 methods.append('get')
             else:
-                methods.append(method)
+                methods.append(method.lower())
             # TODO drill down through decorators to get true function name
             truename = getrealname(func)
             del lc[truename]
@@ -67,7 +67,8 @@ def get_controller_paths(controllers, wsme_defs):
     paths = []
     # TODO incorporate method decorator, removing functions marked
     if lc.get('index'):
-        paths.append(('', get_methods_for_generic('index')))
+        for method in get_methods_for_generic('index'):
+            paths.append(('', (method, {})))
 
     # for REST controller
     for method, path in _http_methods.items():
