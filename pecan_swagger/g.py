@@ -72,7 +72,7 @@ def get_controller_paths(controllers, wsme_defs):
     # for REST controller
     for method, path in _http_methods.items():
         if lc.get(method):
-            spec = wsme_defs.get(method)  # add wsme definitions
+            spec = wsme_defs.get(method, {})  # add wsme definitions
             append_methods_for_specific(method, (path, (method, spec)))
 
     if lc.get('get_all'):
