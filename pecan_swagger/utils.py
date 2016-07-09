@@ -30,7 +30,7 @@ def swagger_build(title, version):
 
 def _tuple_to_dict(tpl):
     """Convert tuple to dictionary
-    
+
     each tuple must have key and value.
     This function arrows taple including lists.
 
