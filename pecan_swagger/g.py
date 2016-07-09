@@ -101,7 +101,8 @@ def get_controller_paths(controllers, wsme_defs):
 
     generic_controllers = [c for c in lc if lc[c].get('generic')]
     for controller in generic_controllers:
-        paths.append((controller, get_methods_for_generic(controller)))
+        for method in get_methods_for_generic(controller):
+            paths.append((controller, (method, {})))
     for controller in lc:
         if controller not in [path[0] for path in paths]:
             paths.append((controller, ('get', {})))
