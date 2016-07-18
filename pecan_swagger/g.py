@@ -2,8 +2,9 @@ import copy
 import inspect
 
 from pecan import util as p_u
+import wsme.types as wtypes
 import six
-import string
+import weakref
 
 
 """
@@ -22,6 +23,11 @@ _hierarchy = {}
 _http_methods = {'get': '', 'post': '', 'put': '',
                  'patch': '<specifier>', 'delete': '<specifier>',
                  'head': '', 'trace': ''}
+
+_all_wsme_types = wtypes.native_types + (
+    wtypes.ArrayType, wtypes.DictType, wtypes.BinaryType,
+    wtypes.IntegerType, wtypes.StringType, wtypes.IPv4AddressType,
+    wtypes.IPv6AddressType, wtypes.UuidType, wtypes.Enum, wtypes.UnsetType)
 
 
 def add_path(c):
@@ -114,13 +120,14 @@ def get_wsme_defs(name):
     def datatype_to_type_and_format(datatype):
         tf = {}
         if datatype == 'uuid' or datatype == 'ipv4address' \
-                or datatype == 'ipv6address':
+                or datatype == 'ipv6address' or datatype == 'date' \
+                or datatype == 'time':
             tf['type'] = 'string'
             tf['format'] = datatype
         elif datatype == 'datetime':
             tf['type'] = 'string'
             tf['format'] = 'date-time'
-        elif datatype == 'binary':
+        elif datatype == 'binary' or datatype == 'bytes':
             # base64 encoded characters
             tf['type'] = 'string'
             tf['format'] = 'byte'
@@ -128,15 +135,23 @@ def get_wsme_defs(name):
                 or datatype == 'integer' or datatype == 'string':
             # no format
             tf['type'] = datatype
-        elif datatype == 'unicode' or datatype == 'str':
+        elif datatype == 'float':
+            # number
+            tf['type'] = 'number'
+            tf['format'] = datatype
+        elif datatype == 'unicode' or datatype == 'str' \
+                or datatype == 'text':
             # primitive, no format
             tf['type'] = 'string'
-        elif datatype == 'int':
+        elif datatype == 'int' or datatype == 'decimal':
             # primitive, no format
             tf['type'] = 'integer'
+        elif datatype == 'bool':
+            # primitive, no format
+            tf['type'] = 'boolean'
         elif datatype == 'enum':
             tf['type'] = 'enum'
-        elif datatype == 'unset':
+        elif datatype == 'unset' or datatype == 'none':
             tf['type'] = None
         elif datatype == 'dict':
             tf['type'] = 'object'
@@ -144,19 +159,37 @@ def get_wsme_defs(name):
             tf['type'] = 'object'
         return tf
 
-    def get_type_str(obj, src_dict=None):
-        str = ''
-        if hasattr(obj, '__name__'):
-            str = obj.__name__
-        else:
-            str = obj.__class__.__name__
-        if str.endswith('Type'):
-            str = str[:-4]
-        elif str == 'str':
-            str = 'string'
-        str = string.lower(str)
+    def class_to_name_str(c):
+        return (('%s' % c).replace('<', '').replace('>', '')
+                .replace('class ', '').replace('\'', '')
+                .split(' ', 1)[0].rsplit('.', 1)[-1])
 
-        tf = datatype_to_type_and_format(str)
+    def conv_class_name_to_type_str(cn):
+        type_str = ''
+        if cn.endswith('Type'):
+            type_str = cn[:-4]
+        elif cn == 'str':
+            type_str = 'string'
+        else:
+            type_str = cn
+        type_str = type_str.lower()
+        return type_str
+
+    def get_type_str(obj, src_dict=None):
+        type_str = ''
+        if hasattr(obj, '__name__'):
+            type_str = obj.__name__
+        else:
+            type_str = obj.__class__.__name__
+        type_str = conv_class_name_to_type_str(type_str)
+
+        tf = datatype_to_type_and_format(type_str)
+
+        if hasattr(obj, 'basetype') and \
+                (obj.__class__ not in _all_wsme_types or type_str == 'enum'):
+            # UserType or Enum
+            tf['type'] = get_type_str(obj.basetype)
+
         if isinstance(src_dict, dict):
             # if dict is in args, set 'type' and 'format' into the dict and
             # return
@@ -176,13 +209,10 @@ def get_wsme_defs(name):
                 # else:
                 #     src_dict[to_swag_key(k)] = v
 
-            if hasattr(obj, 'basetype'):
-                # UserType or Enum
-                src_dict['type'] = get_type_str(obj.basetype)
-
-            if str == 'enum':
-                # Enum
-                src_dict['enum'] = [v for v in obj.values]
+            if type_str == 'enum':
+                # EnumType use 'set' that doesn't have sequence.
+                # So use 'sorted' for keeping static output.
+                src_dict['enum'] = sorted([v for v in obj.values])
 
         # return 'type' only
         return tf['type']
@@ -211,7 +241,12 @@ def get_wsme_defs(name):
         prop_dict = {}
         # TODO(shu-mutou): this should be removed for production.
         # prop_dict['obj'] = inspect.getmembers(item)
-        for a, i in inspect.getmembers(item):
+
+        _item = item
+        if wtypes.iscomplex(item):
+            _item = weakref.ref(item)
+
+        for a, i in inspect.getmembers(_item):
             if a == 'datatype':
                 datatype = get_type_str(i, prop_dict)
                 if datatype == 'array':
@@ -256,19 +291,15 @@ def get_wsme_defs(name):
             if (key[0] != '_' and
                     (obj.__class__.__name__ == 'wsattr'
                      or obj.__class__.__name__ == 'wsproperty')):
+                # TODO(shu-mutou): this should be removed for production.
+                # schema_dict[to_swag_key(key)] = \
+                #     {'obj': inspect.getmembers(obj)}
+
                 if ws_len == 1:
                     # single schema
-                    if get_type_str(obj.datatype) != 'array':
-                        # not array
-                        schema_dict[to_swag_key(key)] = (
-                            get_wm_item_prop(obj, isparams))
-                    else:
-                        # single array
-                        schema_dict[to_swag_key(key)] = {'type': 'array'}
-                        schema_dict[to_swag_key(key)]['items'] = (
-                            get_wm_item_prop(obj, isparams))
+                    schema_dict = get_wm_item_prop(obj, isparams)
                 else:
-                    # multi property schema or array
+                    # multi property schema
                     schema_dict.update({'type': 'object'})
                     # properties
                     if 'items' not in schema_dict:
@@ -282,15 +313,6 @@ def get_wsme_defs(name):
                         schema_dict['required'].append(key)
                         del prop[key]['required']
                     schema_dict['items']['properties'].update(prop)
-
-            # if key == 'sample':
-                # TODO: example from sample
-                # 'examples': {'application/json': {}},
-                # sample function doesn't work without API service in
-                # OpenStack Magnum
-                # schema_dict[to_swag_key(item)] = prop()
-                # schema_dict[to_swag_key(key)] = 'needs sample as examples'
-
         return schema_dict
 
     def get_wm_def(o):
@@ -305,21 +327,33 @@ def get_wsme_defs(name):
                     # TODO: MUST be set one of
                     # 'body|query|path|header|formData'
                     item_dict['in'] = 'query'
-                    if 'schema' in item_dict:
-                        item_dict['in'] = 'body'
                     wsme[to_swag_key(w)].append(item_dict)
+                # 'body' should be set due to existing 'body' option
+                # in WSME expose
+                if o.body_type is not None:
+                    # if body is set, last arg is it.
+                    wsme[to_swag_key(w)][-1]['in'] = 'body'
             elif w == 'doc' and d:
                 wsme[to_swag_key(w)] = d
             elif w == 'return_type':
                 wsme['responses'] = {'status': {'description': ''}}
                 if d:
-                    wsme['responses']['status'][to_swag_key(w)] = (
-                        inspect_wm_schema(d, False))
+                    if d in _all_wsme_types:
+                        # d is set single WSME type class or implicit type
+                        wsme['responses']['status'][to_swag_key(w)] = (
+                            datatype_to_type_and_format(
+                             conv_class_name_to_type_str(
+                              class_to_name_str(d))))
+                    else:
+                        # d is model class
+                        wsme['responses']['status'][to_swag_key(w)] = (
+                            inspect_wm_schema(d, False))
                     doc = inspect.getdoc(d)
                     if doc is not None:
                         wsme['responses']['status']['description'] = doc
             elif w == 'status_code':
-                wsme['responses'][d] = wsme['responses']['status']
+                wsme['responses'][d] = \
+                    copy.deepcopy(wsme['responses']['status'])
                 del wsme['responses']['status']
             # TODO(shu-mutou): this should be removed for production.
             # elif w == 'body_type':
