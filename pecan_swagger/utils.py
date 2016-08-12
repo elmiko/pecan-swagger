@@ -25,6 +25,7 @@ def swagger_build(title, version):
             swag['paths'][p[0]] = _tuple_to_dict(p[1])
         elif len(p[1]) > 0:
             swag['paths'][p[0]].update(_tuple_to_dict(p[1]))
+    swag['definitions'] = g._definitions
     return swag
 
 

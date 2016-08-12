@@ -29,6 +29,8 @@ _all_wsme_types = wtypes.native_types + (
     wtypes.IntegerType, wtypes.StringType, wtypes.IPv4AddressType,
     wtypes.IPv6AddressType, wtypes.UuidType, wtypes.Enum, wtypes.UnsetType)
 
+_definitions = {}
+
 
 def add_path(c):
     """adds a named controller to the hierarchy."""
@@ -287,12 +289,14 @@ def get_wsme_defs(name):
         # TODO(shu-mutou): this should be removed for production.
         # schema_dict['obj'] = get_wsattr_and_wsproperty(schema_obj)
         ws_len = len(get_wsattr_and_wsproperty(schema_obj))
+        model_name = class_to_name_str(schema_obj)
+
         for key, obj in inspect.getmembers(schema_obj):
             if (key[0] != '_' and
                     (obj.__class__.__name__ == 'wsattr'
                      or obj.__class__.__name__ == 'wsproperty')):
                 # TODO(shu-mutou): this should be removed for production.
-                # schema_dict[to_swag_key(key)] = \
+                # _definitions[model_name][to_swag_key(key)] = \
                 #     {'obj': inspect.getmembers(obj)}
 
                 if ws_len == 1:
@@ -313,6 +317,12 @@ def get_wsme_defs(name):
                         schema_dict['required'].append(key)
                         del prop[key]['required']
                     schema_dict['items']['properties'].update(prop)
+
+        if schema_obj not in _all_wsme_types:
+            if model_name not in _definitions:
+                _definitions[model_name] = schema_dict
+            schema_dict = {'$ref': "#/definitions/%s" % model_name}
+
         return schema_dict
 
     def get_wm_def(o):
@@ -352,8 +362,7 @@ def get_wsme_defs(name):
                     if doc is not None:
                         wsme['responses']['status']['description'] = doc
             elif w == 'status_code':
-                wsme['responses'][d] = \
-                    copy.deepcopy(wsme['responses']['status'])
+                wsme['responses'][d] = wsme['responses']['status']
                 del wsme['responses']['status']
             # TODO(shu-mutou): this should be removed for production.
             # elif w == 'body_type':

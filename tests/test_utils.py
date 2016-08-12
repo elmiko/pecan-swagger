@@ -15,6 +15,7 @@ class TestUtils(unittest.TestCase):
                 },
             "produces": [],
             "consumes": [],
+            "definitions": {},
             "paths": {
                 "/api": {
                     "get": {}
@@ -46,6 +47,46 @@ class TestUtils(unittest.TestCase):
         expected = \
             {
               "consumes": [],
+              "definitions": {
+                "MessageCollection": {
+                  "items": {
+                    "$ref": "#/definitions/MessageModel"
+                  },
+                  "type": "array"
+                },
+                "MessageModel": {
+                  "items": {
+                    "properties": {
+                      "id": {
+                        "maxLength": 255,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "message": {
+                        "maxLength": 255,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "message_from": {
+                        "enum": [
+                          "1.OSOMATSU",
+                          "2.KARAMATSU",
+                          "3.CHOROMATSU",
+                          "4.ICHIMATSU",
+                          "5.JUSHIMATSU",
+                          "6.TODOMATSU"
+                        ],
+                        "type": "string"
+                      },
+                      "message_size": {
+                        "minimum": 1,
+                        "type": "integer"
+                      }
+                    }
+                  },
+                  "type": "object"
+                }
+              },
               "info": {
                 "title": "example_wsme_app",
                 "version": "1.0"
@@ -77,39 +118,7 @@ class TestUtils(unittest.TestCase):
                       200: {
                         "description": "",
                         "schema": {
-                          "items": {
-                            "items": {
-                              "properties": {
-                                "id": {
-                                  "maxLength": 255,
-                                  "minLength": 1,
-                                  "type": "string"
-                                },
-                                "message": {
-                                  "maxLength": 255,
-                                  "minLength": 1,
-                                  "type": "string"
-                                },
-                                "message_from": {
-                                  "enum": [
-                                    '1.OSOMATSU',
-                                    '2.KARAMATSU',
-                                    '3.CHOROMATSU',
-                                    '4.ICHIMATSU',
-                                    '5.JUSHIMATSU',
-                                    '6.TODOMATSU'
-                                  ],
-                                  "type": "string"
-                                },
-                                "message_size": {
-                                  "minimum": 1,
-                                  "type": "integer"
-                                }
-                              }
-                            },
-                            "type": "object"
-                          },
-                          "type": "array"
+                          "$ref": "#/definitions/MessageCollection"
                         }
                       }
                     }
@@ -128,36 +137,7 @@ class TestUtils(unittest.TestCase):
                       201: {
                         "description": "",
                         "schema": {
-                          "items": {
-                            "properties": {
-                              "id": {
-                                "maxLength": 255,
-                                "minLength": 1,
-                                "type": "string"
-                              },
-                              "message": {
-                                "maxLength": 255,
-                                "minLength": 1,
-                                "type": "string"
-                              },
-                              "message_from": {
-                                "enum": [
-                                    '1.OSOMATSU',
-                                    '2.KARAMATSU',
-                                    '3.CHOROMATSU',
-                                    '4.ICHIMATSU',
-                                    '5.JUSHIMATSU',
-                                    '6.TODOMATSU'
-                                ],
-                                "type": "string"
-                              },
-                              "message_size": {
-                                "minimum": 1,
-                                "type": "integer"
-                              }
-                            }
-                          },
-                          "type": "object"
+                          "$ref": "#/definitions/MessageModel"
                         }
                       }
                     }
@@ -194,36 +174,7 @@ class TestUtils(unittest.TestCase):
                       200: {
                         "description": "",
                         "schema": {
-                          "items": {
-                            "properties": {
-                              "id": {
-                                "maxLength": 255,
-                                "minLength": 1,
-                                "type": "string"
-                              },
-                              "message": {
-                                "maxLength": 255,
-                                "minLength": 1,
-                                "type": "string"
-                              },
-                              "message_from": {
-                                "enum": [
-                                    '1.OSOMATSU',
-                                    '2.KARAMATSU',
-                                    '3.CHOROMATSU',
-                                    '4.ICHIMATSU',
-                                    '5.JUSHIMATSU',
-                                    '6.TODOMATSU'
-                                ],
-                                "type": "string"
-                              },
-                              "message_size": {
-                                "minimum": 1,
-                                "type": "integer"
-                              }
-                            }
-                          },
-                          "type": "object"
+                          "$ref": "#/definitions/MessageModel"
                         }
                       }
                     }
@@ -244,36 +195,7 @@ class TestUtils(unittest.TestCase):
                       200: {
                         "description": "",
                         "schema": {
-                          "items": {
-                            "properties": {
-                              "id": {
-                                "maxLength": 255,
-                                "minLength": 1,
-                                "type": "string"
-                              },
-                              "message": {
-                                "maxLength": 255,
-                                "minLength": 1,
-                                "type": "string"
-                              },
-                              "message_from": {
-                                "enum": [
-                                    '1.OSOMATSU',
-                                    '2.KARAMATSU',
-                                    '3.CHOROMATSU',
-                                    '4.ICHIMATSU',
-                                    '5.JUSHIMATSU',
-                                    '6.TODOMATSU'
-                                ],
-                                "type": "string"
-                              },
-                              "message_size": {
-                                "minimum": 1,
-                                "type": "integer"
-                              }
-                            }
-                          },
-                          "type": "object"
+                          "$ref": "#/definitions/MessageModel"
                         }
                       }
                     }
